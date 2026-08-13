@@ -1,20 +1,21 @@
 {
   "url": "http://localhost:8080/hello",
   "concurrency": 8,
+  "warmup_seconds": 2.0,
   "requested_duration_seconds": 10.0,
-  "actual_duration_seconds": 10.037,
-  "total_requests": 1731,
-  "successful_requests": 1731,
+  "actual_duration_seconds": 10.029,
+  "total_requests": 1748,
+  "successful_requests": 1748,
   "failed_requests": 0,
-  "requests_per_second": 172.46,
+  "error_breakdown": {},
+  "requests_per_second": 174.29,
   "latency_ms": {
-    "min": 11.143,
-    "max": 58.51,
-    "avg": 46.101,
-    "p50": 46.073,
-    "p95": 51.699,
-    "p99": 54.918
+    "min": 41.559,
+    "max": 59.98,
+    "avg": 45.814,
+    "p50": 45.844,
+    "p95": 50.362,
+    "p99": 53.259
   },
-  "sample_errors": [],
   "server_workers_label": "8"
 }
