@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost:8080/hello",
+  "concurrency": 8,
+  "requested_duration_seconds": 10.0,
+  "actual_duration_seconds": 10.053,
+  "total_requests": 889,
+  "successful_requests": 885,
+  "failed_requests": 4,
+  "requests_per_second": 88.03,
+  "latency_ms": {
+    "min": 10.254,
+    "max": 52.56,
+    "avg": 45.11,
+    "p50": 45.068,
+    "p95": 48.859,
+    "p99": 50.31
+  },
+  "sample_errors": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "server_workers_label": "4"
+}

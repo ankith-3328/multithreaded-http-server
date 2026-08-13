@@ -2,6 +2,8 @@ package com.ankith.httpserver.server;
 
 import com.ankith.httpserver.config.ServerConfig;
 import com.ankith.httpserver.http.*;
+import com.ankith.httpserver.logging.RequestLogger;
+import com.ankith.httpserver.metrics.MetricsRegistry;
 import com.ankith.httpserver.router.Router;
 
 import java.io.*;
@@ -13,26 +15,28 @@ public final class ClientHandler implements Runnable {
     private final Socket socket;
     private final Router router;
     private final ServerConfig config;
+    private final MetricsRegistry metrics;
 
     public ClientHandler(
             Socket socket,
             Router router,
-            ServerConfig config
+            ServerConfig config,
+            MetricsRegistry metrics
     ) {
         this.socket = socket;
         this.router = router;
         this.config = config;
+        this.metrics = metrics;
     }
 
     @Override
     public void run() {
         String thread = Thread.currentThread().getName();
+        metrics.connectionOpened();
 
         try (socket) {
 
-            socket.setSoTimeout(
-                    config.keepAliveTimeoutMs()
-            );
+            socket.setSoTimeout(config.keepAliveTimeoutMs());
 
             InputStream input = socket.getInputStream();
             OutputStream output = socket.getOutputStream();
@@ -48,13 +52,12 @@ public final class ClientHandler implements Runnable {
                 } catch (SocketTimeoutException timeout) {
                     break;
                 } catch (HttpParser.BadRequestException bad) {
-                    writer.write(
-                            output,
-                            HttpResponse.text(
-                                    HttpStatus.BAD_REQUEST,
-                                    bad.getMessage()
-                            )
+                    HttpResponse errorResponse = HttpResponse.text(
+                            HttpStatus.BAD_REQUEST,
+                            bad.getMessage() + "\n"
                     );
+                    writer.write(output, errorResponse);
+                    metrics.recordRequest(400, errorResponse.body().length);
                     break;
                 }
 
@@ -71,15 +74,17 @@ public final class ClientHandler implements Runnable {
                     );
                 }
 
-                boolean keepAlive =
-                        KeepAliveManager.shouldKeepAlive(request);
+                boolean keepAlive = KeepAliveManager.shouldKeepAlive(request);
 
-                response = KeepAliveManager.withConnectionHeader(
-                        response,
-                        keepAlive
-                );
+                response = KeepAliveManager.withConnectionHeader(response, keepAlive);
 
                 writer.write(output, response);
+
+                metrics.recordRequest(
+                        response.status().code(),
+                        response.body().length
+                );
+                RequestLogger.log(request, response);
 
                 if (!keepAlive) {
                     break;
@@ -87,10 +92,9 @@ public final class ClientHandler implements Runnable {
             }
 
         } catch (IOException e) {
-            System.err.println(
-                    thread + " connection error: "
-                            + e.getMessage()
-            );
+            System.err.println(thread + " connection error: " + e.getMessage());
+        } finally {
+            metrics.connectionClosed();
         }
     }
 }
